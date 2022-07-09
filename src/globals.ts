@@ -51,6 +51,30 @@ export interface Message {
   created_at: Date;
 }
 
+export interface Like {
+  _id: string;
+  author_id: string;
+  post_id: string;
+  liked: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface Comment {
+  _id: string;
+  author_id: string;
+  parent_id: string;
+  parenttype: "post" | "comment";
+  content: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// export enum CommentParentType {
+//   POST,
+//   COMMENT,
+// }
+
 export interface UserCreationCredentials {
   email: string;
   firstname: string;
