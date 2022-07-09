@@ -1,11 +1,26 @@
+export const frontUrl = "http://localhost:3000";
 export const hexVerification = /[0-9A-Fa-f]{6}/g;
 
+export const assetsDestination =
+  "/home/izumi/Documents/Projects/Nodejs/TwoFace/twofacefront/public/assets";
+
+export const userPicsDestination = assetsDestination + "/userpics";
+
+export const objectIdVerify = (id: string): boolean => {
+  if (id.length === 24 || hexVerification.test(id)) {
+    return true;
+  } else {
+    return false;
+  }
+};
+
 export interface Post {
+  _id: string;
   title: string;
   content: string;
   author_id: string;
   authorname: string;
-  create_at: Date;
+  created_at: Date;
   updated_at: Date;
 }
 
@@ -15,7 +30,25 @@ export interface User {
   lastname: string;
   email: string;
   password: string;
+  profilepicture: string;
+  backgroundpicture: string;
   bio: string;
+}
+
+export interface Chat {
+  _id: string;
+  image: string;
+  chatname: string;
+  participants: string[];
+  created_at: Date;
+}
+
+export interface Message {
+  _id: string;
+  author_id: string;
+  chat_id: string;
+  content: string;
+  created_at: Date;
 }
 
 export interface UserCreationCredentials {

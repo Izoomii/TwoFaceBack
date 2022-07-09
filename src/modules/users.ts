@@ -3,20 +3,15 @@ import {
   User,
   UserCreationCredentials,
   UserLoginCredentials,
+  userPicsDestination,
 } from "../globals";
 import { hash, verify } from "argon2";
 import { db } from "../libs/mongo/mongo";
-
-//give SessionData ability to have user
-declare module "express-session" {
-  export interface SessionData {
-    user: User;
-  }
-}
-
-const userCollection = db.collection("users"); //not sure about this
+import { uploadSingle } from "../libs/middleware/multer";
+import { ObjectId } from "mongodb";
 
 const userRouter = Router();
+const userCollection = db.collection("users"); //not sure about this
 
 userRouter.get("/all", async (_, res) => {
   const result = await userCollection.find({}).toArray();
@@ -24,7 +19,7 @@ userRouter.get("/all", async (_, res) => {
 });
 
 userRouter.get("/whoami", async (req, res) => {
-  res.json({ User: req.session.user });
+  res.json({ user: req.session.user ? req.session.user : null });
 });
 
 userRouter.post("/create", async (req, res) => {
@@ -48,6 +43,8 @@ userRouter.post("/create", async (req, res) => {
     password: await hash(body.password),
     lastname: "",
     bio: "",
+    profilepicture: "",
+    backgroundpicture: "",
   });
   res.json({ message: "Created user", user: newUser });
 });
@@ -69,5 +66,32 @@ userRouter.post("/login", async (req, res) => {
   }
   res.json({ authorized: false, user: null });
 });
+
+userRouter.post(
+  "/update",
+  uploadSingle("profilePicture", userPicsDestination),
+  async (req, res) => {
+    //assumes user is connected for now
+
+    const body = req.body as User; //verify this before updating
+    const user = req.session.user as User;
+    const profilePicture = req.file ? req.file.filename : "";
+
+    const updatedUser = await userCollection.updateOne(
+      { _id: new ObjectId(user._id) },
+      {
+        $set: {
+          firstname: body.firstname,
+          email: body.email,
+          // password: user.password, //doesnt change
+          lastname: body.lastname,
+          bio: body.bio,
+          profilepicture: profilePicture ? profilePicture : user.profilepicture,
+        },
+      }
+    );
+    res.json({ message: "Updated user!", user: updatedUser });
+  }
+);
 
 export { userRouter };

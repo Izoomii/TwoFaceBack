@@ -1,38 +1,39 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
 import { hexVerification, Post, User } from "../globals";
+import { isAuthentified } from "../libs/middleware/auth";
 import { db } from "../libs/mongo/mongo";
 const postRouter = Router();
 const postCollection = db.collection("posts");
-const userCollection = db.collection("users");
 
 postRouter.get("/all", async (_, res) => {
   const elements = await postCollection.find({}).toArray();
   res.json({ data: elements });
 });
 
-postRouter.post("/create", async (req, res) => {
+postRouter.post("/create", isAuthentified, async (req, res) => {
   const body = req.body as Post;
-  //maybe send different response here
-  if (body.title === "") return console.log("Title is empty in post creation");
-  if (body.author_id.length !== 24 || !hexVerification.test(body.author_id))
+  const user = req.session.user as User;
+
+  if (body.title === "")
+    return res.json({ message: "Title is empty in post creation", post: null });
+
+  //why do i still have this? only god knows
+  //god KNEW, i needed this later
+  if (user._id.length !== 24 || !hexVerification.test(user._id))
     return console.log("Invalid author_id in post creation ");
 
-  //verify user exists
-  const existingUser = await userCollection.findOne<User>({
-    _id: new ObjectId(body.author_id),
-  });
-
-  if (!existingUser) return console.log("User doesn't exist");
   const newPost = await postCollection.insertOne({
     title: body.title,
     content: body.content,
-    author_id: body.author_id,
-    authorname: existingUser?.firstname,
+    author_id: user._id,
+    authorname: user.firstname,
     created_at: new Date(),
     updated_at: new Date(),
   });
-  res.json({ post: newPost });
+  res.json({ message: "Created new post!", post: newPost });
 });
+
+//interactions: (likes, comments, etc...)
 
 export { postRouter };
