@@ -9,7 +9,10 @@ const likeCollection = db.collection("likes");
 const commentCollection = db.collection("comments");
 
 postRouter.get("/all", async (_, res) => {
-  const elements = await postCollection.find({}).toArray();
+  const elements = await postCollection
+    .find({})
+    .sort({ created_at: -1 })
+    .toArray();
   res.json({ data: elements });
 });
 
@@ -53,6 +56,19 @@ postRouter.get("/likes", isAuthentified, async (req, res) => {
   res.json({ message: "Searched all likes for the post", response: postLikes });
 });
 
+postRouter.get("/likesamount", isAuthentified, async (req, res) => {
+  const postId = req.query.post_id as string;
+
+  //use aaggregation instead
+  const likesAmount = await likeCollection
+    .find({
+      post_id: postId,
+      liked: true,
+    })
+    .toArray();
+  res.json({ amount: likesAmount.length });
+});
+
 postRouter.post("/like", isAuthentified, async (req, res) => {
   const body = req.body as { post_id: string };
   const user = req.session.user as User;
@@ -92,12 +108,14 @@ postRouter.post("/like", isAuthentified, async (req, res) => {
   }
 });
 
-postRouter.get("/comments", isAuthentified, async (req, res) => {
+postRouter.get("/comments", async (req, res) => {
   const query = req.query as { parent_id: string; parenttype: string }; //move this to globals if it's needed in multiple other requests
+  //this will assume parenttype is post when nothing is specified
+  //it doesn't work -__-
   const existingParent =
-    query.parenttype === "post"
-      ? await postCollection.findOne({ _id: new ObjectId(query.parent_id) })
-      : await commentCollection.findOne({ _id: new ObjectId(query.parent_id) });
+    query.parenttype === "comment"
+      ? await commentCollection.findOne({ _id: new ObjectId(query.parent_id) })
+      : await postCollection.findOne({ _id: new ObjectId(query.parent_id) });
 
   if (!existingParent)
     return res.json({

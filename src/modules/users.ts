@@ -18,6 +18,16 @@ userRouter.get("/all", async (_, res) => {
   res.json({ users: result });
 });
 
+userRouter.get("/user", async (req, res) => {
+  const userId = req.query.user_id as string;
+  //remove password from results, using mongodb projection or some shit
+  const existingUser = await userCollection.findOne<User>({
+    _id: new ObjectId(userId),
+  });
+
+  res.json({ user: existingUser });
+});
+
 userRouter.get("/whoami", async (req, res) => {
   res.json({ user: req.session.user ? req.session.user : null });
 });
@@ -26,7 +36,10 @@ userRouter.post("/create", async (req, res) => {
   const body = req.body as UserCreationCredentials;
 
   if (body.email === "" || body.firstname === "")
-    return res.json({ message: "email or firstname empty", user: null });
+    return res.json({ message: "Email or firstname empty", user: null });
+
+  if (body.password === "")
+    return res.json({ message: "Password is empty", user: null });
 
   const existingUser = await userCollection.findOne({
     email: body.email,

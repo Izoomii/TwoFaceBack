@@ -6,16 +6,31 @@ import { db } from "../libs/mongo/mongo";
 
 const chatRouter = Router();
 
+const userCollection = db.collection("users");
 const chatCollection = db.collection("chats");
 const messageCollection = db.collection("messages");
 
 chatRouter.post("/create", isAuthentified, async (req, res) => {
   const body = req.body as Chat;
+  //participants come as emails for now
+  const participants: string[] = [];
+
+  //verify body.participants array first
+  //also check that elements are unique
+  for (const email of body.participants) {
+    const user = await userCollection.findOne<User>({
+      email: email.trim(),
+    });
+    //note that this will just ignore invalid emails
+    if (!user) continue;
+    participants.push(user._id.toString());
+  }
+
   const newChat = await chatCollection.insertOne({
     image: "", //IMPL to have image from body.image
     chatname: body.chatname,
     created_at: new Date(),
-    participants: body.participants,
+    participants: participants,
   });
   res.json({ message: "Created new chat!", chat: newChat });
 });
@@ -54,7 +69,7 @@ chatRouter.get("/log", isAuthentified, async (req, res) => {
       return res.json(messages);
     }
   }
-  res.json({ message: "Nah bruh" });
+  res.json({ message: "There was an error retrieving the chat" }); //improve this
 });
 
 chatRouter.post("/messages/create", isAuthentified, async (req, res) => {
