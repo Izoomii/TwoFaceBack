@@ -2,11 +2,12 @@ import { Router } from "express";
 import { ObjectId } from "mongodb";
 import { hexVerification, Like, Post, User, Comment } from "../globals";
 import { isAuthentified } from "../libs/middleware/auth";
-import { db } from "../libs/mongo/mongo";
+import {
+  postCollection,
+  likeCollection,
+  commentCollection,
+} from "../libs/mongo/mongo";
 const postRouter = Router();
-const postCollection = db.collection("posts");
-const likeCollection = db.collection("likes");
-const commentCollection = db.collection("comments");
 
 postRouter.get("/all", async (_, res) => {
   const elements = await postCollection

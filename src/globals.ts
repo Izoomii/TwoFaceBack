@@ -70,10 +70,12 @@ export interface Comment {
   updated_at: Date;
 }
 
-// export enum CommentParentType {
-//   POST,
-//   COMMENT,
-// }
+export interface Friendship {
+  _id: string;
+  sender_id: string;
+  receiver_id: string;
+  status: "accepted" | "pending" | "declined";
+}
 
 export interface UserCreationCredentials {
   email: string;

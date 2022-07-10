@@ -10,4 +10,22 @@ const options = {
 const mongo = new MongoClient(uri, options);
 const db = mongo.db("twofacedb");
 
-export { mongo, db };
+const userCollection = db.collection("users");
+const postCollection = db.collection("posts");
+const likeCollection = db.collection("likes");
+const commentCollection = db.collection("comments");
+const messageCollection = db.collection("messages");
+const chatCollection = db.collection("chats");
+const friendsCollection = db.collection("friendships");
+
+export {
+  mongo,
+  db,
+  userCollection,
+  postCollection,
+  likeCollection,
+  commentCollection,
+  messageCollection,
+  chatCollection,
+  friendsCollection,
+};

@@ -2,13 +2,13 @@ import { Router } from "express";
 import { ObjectId } from "mongodb";
 import { Chat, Message, User } from "../globals";
 import { isAuthentified } from "../libs/middleware/auth";
-import { db } from "../libs/mongo/mongo";
+import {
+  messageCollection,
+  userCollection,
+  chatCollection,
+} from "../libs/mongo/mongo";
 
 const chatRouter = Router();
-
-const userCollection = db.collection("users");
-const chatCollection = db.collection("chats");
-const messageCollection = db.collection("messages");
 
 chatRouter.post("/create", isAuthentified, async (req, res) => {
   const body = req.body as Chat;

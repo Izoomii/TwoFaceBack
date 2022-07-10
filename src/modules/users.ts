@@ -6,12 +6,11 @@ import {
   userPicsDestination,
 } from "../globals";
 import { hash, verify } from "argon2";
-import { db } from "../libs/mongo/mongo";
+import { userCollection } from "../libs/mongo/mongo";
 import { uploadSingle } from "../libs/middleware/multer";
 import { ObjectId } from "mongodb";
 
 const userRouter = Router();
-const userCollection = db.collection("users"); //not sure about this
 
 userRouter.get("/all", async (_, res) => {
   const result = await userCollection.find({}).toArray();

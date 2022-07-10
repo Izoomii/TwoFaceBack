@@ -6,6 +6,7 @@ import { postRouter } from "./modules/posts";
 import { userRouter } from "./modules/users";
 import { frontUrl, User } from "./globals";
 import { chatRouter } from "./modules/chats";
+import { friendsRouter } from "./modules/friendships";
 const port = 8080;
 const server = express();
 
@@ -41,6 +42,11 @@ mongo.connect((err) => {
 server.use("/posts", postRouter);
 server.use("/users", userRouter);
 server.use("/chats", chatRouter);
+server.use("/friends", friendsRouter);
+
+server.get("/test", async (req, res) => {
+  res.json({ message: "Test Route!" });
+});
 
 // mongo.close()
 server.listen(port, () => {
