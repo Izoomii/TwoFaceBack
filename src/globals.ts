@@ -75,6 +75,8 @@ export interface Friendship {
   sender_id: string;
   receiver_id: string;
   status: "accepted" | "pending" | "declined";
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface UserCreationCredentials {

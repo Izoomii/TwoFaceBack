@@ -23,6 +23,25 @@ friendsRouter.get("/all", isAuthentified, async (req, res) => {
   res.json(result);
 });
 
+friendsRouter.get("/friendship", isAuthentified, async (req, res) => {
+  const user = req.session.user as User;
+  const receiverId = req.query.user_id as string;
+
+  const existingFriendship = await friendsCollection.findOne<Friendship>({
+    $or: [
+      { sender_id: user._id, receiver_id: receiverId },
+      { sender_id: receiverId, receiver_id: user._id },
+    ],
+  });
+
+  if (!existingFriendship)
+    return res.json({
+      message: "There isn't any friendship between you.",
+      friendship: null,
+    });
+  res.json({ message: "Found friendship", friendship: existingFriendship });
+});
+
 friendsRouter.post("/send", isAuthentified, async (req, res) => {
   const body = req.body as { receiver_id: string };
   const user = req.session.user as User;
@@ -47,12 +66,14 @@ friendsRouter.post("/send", isAuthentified, async (req, res) => {
 
   if (existingRequests[0]) {
     const request = existingRequests[0];
+
     if (request.status === "accepted")
       return res.json({ message: "You are already friends!" });
-    if (request.sender_id === user._id)
-      return res.json({ message: "Your request is still pending." });
 
     if (request.status === "pending") {
+      if (request.sender_id === user._id)
+        return res.json({ message: "Your request is still pending." });
+
       const updatedRequest = await friendsCollection.updateOne(
         {
           _id: new ObjectId(request._id),

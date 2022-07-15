@@ -79,6 +79,16 @@ userRouter.post("/login", async (req, res) => {
   res.json({ authorized: false, user: null });
 });
 
+userRouter.post("/logout", async (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      res.json({ message: "There was an error", error: err });
+    } else {
+      res.json({ message: "Logged out.", error: null });
+    }
+  });
+});
+
 userRouter.post(
   "/update",
   uploadSingle("profilePicture", userPicsDestination),
