@@ -1,7 +1,16 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
-import { hexVerification, Like, Post, User, Comment } from "../globals";
+import {
+  hexVerification,
+  Like,
+  Post,
+  User,
+  Comment,
+  objectIdVerify,
+  postPicsDestination,
+} from "../globals";
 import { isAuthentified } from "../libs/middleware/auth";
+import { uploadSingle } from "../libs/middleware/multer";
 import {
   postCollection,
   likeCollection,
@@ -17,33 +26,58 @@ postRouter.get("/all", async (_, res) => {
   res.json({ data: elements });
 });
 
-postRouter.post("/create", isAuthentified, async (req, res) => {
-  const body = req.body as Post;
-  const user = req.session.user as User;
+postRouter.get("/post", async (req, res) => {
+  const postId = req.query.post_id as string;
 
-  if (body.title === "")
-    return res.json({ message: "Title is empty in post creation", post: null });
+  if (!objectIdVerify(postId)) return res.json({ message: "Invalid post_id" });
 
-  //why do i still have this? only god knows
-  //god KNEW, i needed this later
-  if (user._id.length !== 24 || !hexVerification.test(user._id))
-    return console.log("Invalid author_id in post creation ");
-
-  const newPost = await postCollection.insertOne({
-    title: body.title,
-    content: body.content,
-    author_id: user._id,
-    authorname: user.firstname,
-    created_at: new Date(),
-    updated_at: new Date(),
+  const existingPost = await postCollection.findOne<Post>({
+    _id: new ObjectId(postId),
   });
-  res.json({ message: "Created new post!", post: newPost });
+
+  res.json({ message: "Post", post: existingPost });
 });
+
+postRouter.post(
+  "/create",
+  isAuthentified,
+  uploadSingle("image", postPicsDestination),
+  async (req, res) => {
+    const body = req.body as Post;
+    const user = req.session.user as User;
+    const image = req.file ? req.file.filename : "";
+
+    if (body.title === "")
+      return res.json({
+        message: "Title is empty in post creation",
+        post: null,
+      });
+
+    //why do i still have this? only god knows
+    //god KNEW, i needed this later
+    if (user._id.length !== 24 || !hexVerification.test(user._id))
+      return console.log("Invalid author_id in post creation ");
+
+    const newPost = await postCollection.insertOne({
+      title: body.title,
+      content: body.content,
+      author_id: user._id,
+      authorname: user.firstname,
+      image: image,
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+    res.json({ message: "Created new post!", post: newPost });
+  }
+);
 
 //interactions: (likes, comments, etc...)
 
 postRouter.get("/likes", isAuthentified, async (req, res) => {
   const postId = req.query.post_id as string;
+
+  if (!objectIdVerify(postId)) return res.json({ message: "Invalid post_id" });
+
   const existingPost = await postCollection.findOne({
     _id: new ObjectId(postId),
   });
@@ -60,6 +94,8 @@ postRouter.get("/likes", isAuthentified, async (req, res) => {
 postRouter.get("/likesamount", isAuthentified, async (req, res) => {
   const postId = req.query.post_id as string;
 
+  if (!objectIdVerify(postId)) return res.json({ message: "Invalid post_id" });
+
   //use aaggregation instead
   const likesAmount = await likeCollection
     .find({
@@ -73,6 +109,10 @@ postRouter.get("/likesamount", isAuthentified, async (req, res) => {
 postRouter.post("/like", isAuthentified, async (req, res) => {
   const body = req.body as { post_id: string };
   const user = req.session.user as User;
+
+  if (!objectIdVerify(body.post_id))
+    return res.json({ message: "Invalid post_id" });
+
   const existingPost = await postCollection.findOne({
     _id: new ObjectId(body.post_id),
   });
@@ -111,6 +151,10 @@ postRouter.post("/like", isAuthentified, async (req, res) => {
 
 postRouter.get("/comments", async (req, res) => {
   const query = req.query as { parent_id: string; parenttype: string }; //move this to globals if it's needed in multiple other requests
+
+  if (!objectIdVerify(query.parent_id))
+    return res.json({ message: "Invalid parent_id" });
+
   //this will assume parenttype is post when nothing is specified
   //it doesn't work -__-
   const existingParent =
@@ -137,6 +181,9 @@ postRouter.get("/comments", async (req, res) => {
 postRouter.post("/comment", isAuthentified, async (req, res) => {
   const body = req.body as Comment;
   const user = req.session.user as User;
+
+  if (!objectIdVerify(body.parent_id))
+    return res.json({ message: "Invalid parent_id" });
 
   const existingParent =
     body.parenttype === "post"

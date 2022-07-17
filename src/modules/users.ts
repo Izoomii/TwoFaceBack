@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  objectIdVerify,
   User,
   UserCreationCredentials,
   UserLoginCredentials,
@@ -9,6 +10,7 @@ import { hash, verify } from "argon2";
 import { userCollection } from "../libs/mongo/mongo";
 import { uploadSingle } from "../libs/middleware/multer";
 import { ObjectId } from "mongodb";
+import { isAuthentified } from "../libs/middleware/auth";
 
 const userRouter = Router();
 
@@ -19,11 +21,13 @@ userRouter.get("/all", async (_, res) => {
 
 userRouter.get("/user", async (req, res) => {
   const userId = req.query.user_id as string;
+
+  if (!objectIdVerify(userId)) return res.json({ message: "Invalid user_id" });
+
   //remove password from results, using mongodb projection or some shit
   const existingUser = await userCollection.findOne<User>({
     _id: new ObjectId(userId),
   });
-
   res.json({ user: existingUser });
 });
 
@@ -91,27 +95,38 @@ userRouter.post("/logout", async (req, res) => {
 
 userRouter.post(
   "/update",
+  isAuthentified,
   uploadSingle("profilePicture", userPicsDestination),
   async (req, res) => {
-    //assumes user is connected for now
-
     const body = req.body as User; //verify this before updating
     const user = req.session.user as User;
     const profilePicture = req.file ? req.file.filename : "";
+
+    const updatedUserInfo = {
+      firstname: body.firstname,
+      email: body.email,
+      password: user.password, //doesnt change
+      lastname: body.lastname,
+      bio: body.bio,
+      profilepicture: profilePicture ? profilePicture : user.profilepicture,
+    };
 
     const updatedUser = await userCollection.updateOne(
       { _id: new ObjectId(user._id) },
       {
         $set: {
-          firstname: body.firstname,
-          email: body.email,
+          firstname: updatedUserInfo.firstname,
+          email: updatedUserInfo.email,
           // password: user.password, //doesnt change
-          lastname: body.lastname,
-          bio: body.bio,
-          profilepicture: profilePicture ? profilePicture : user.profilepicture,
+          lastname: updatedUserInfo.lastname,
+          bio: updatedUserInfo.bio,
+          profilepicture: updatedUserInfo.profilepicture,
         },
       }
     );
+    // req.session.destroy((err) => {
+    //   if (err) console.warn("There was an error logging out updated user");
+    // });
     res.json({ message: "Updated user!", user: updatedUser });
   }
 );

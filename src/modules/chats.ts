@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
-import { Chat, Message, User } from "../globals";
+import { Chat, Message, objectIdVerify, User } from "../globals";
 import { isAuthentified } from "../libs/middleware/auth";
 import {
   messageCollection,
@@ -48,6 +48,8 @@ chatRouter.get("/list", isAuthentified, async (req, res) => {
 chatRouter.get("/log", isAuthentified, async (req, res) => {
   const chatId = req.query.id as string;
   const user = req.session.user as User;
+
+  if (!objectIdVerify(chatId)) return res.json({ message: "Invalid ID" });
   const existingChat = await chatCollection.findOne<Chat>({
     _id: new ObjectId(chatId), //do the hex verification thing
   });

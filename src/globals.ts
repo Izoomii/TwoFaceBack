@@ -1,13 +1,14 @@
 export const frontUrl = "http://localhost:3000";
-export const hexVerification = /[0-9A-Fa-f]{6}/g;
+export const hexVerification = /[0-9A-Fa-f]/g;
 
 export const assetsDestination =
   "/home/izumi/Documents/Projects/Nodejs/TwoFace/twofacefront/public/assets";
 
 export const userPicsDestination = assetsDestination + "/userpics";
+export const postPicsDestination = assetsDestination + "/postpics";
 
 export const objectIdVerify = (id: string): boolean => {
-  if (id.length === 24 || hexVerification.test(id)) {
+  if (id.length === 24 && hexVerification.test(id)) {
     return true;
   } else {
     return false;

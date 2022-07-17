@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
-import { Friendship, User } from "../globals";
+import { Friendship, objectIdVerify, User } from "../globals";
 import { isAuthentified } from "../libs/middleware/auth";
 import { friendsCollection } from "../libs/mongo/mongo";
 
@@ -45,6 +45,9 @@ friendsRouter.get("/friendship", isAuthentified, async (req, res) => {
 friendsRouter.post("/send", isAuthentified, async (req, res) => {
   const body = req.body as { receiver_id: string };
   const user = req.session.user as User;
+
+  if (!objectIdVerify(body.receiver_id))
+    return res.json({ message: "Invalid receiver_id" });
 
   if (body.receiver_id === user._id)
     return res.json({
@@ -118,6 +121,9 @@ friendsRouter.post("/send", isAuthentified, async (req, res) => {
 friendsRouter.post("/decline", isAuthentified, async (req, res) => {
   const body = req.body as { receiver_id: string };
   const user = req.session.user as User;
+
+  if (!objectIdVerify(body.receiver_id))
+    return res.json({ message: "Invalid receiver_id" });
 
   const existingRequest = await friendsCollection.findOne<Friendship>({
     $or: [
